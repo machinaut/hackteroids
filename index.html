@@ -15,12 +15,27 @@
         function initCB(instance) {
             ge = instance;
 
+            // Hack to really show control slider
+            //ge.getTime().setHistoricalImageryEnabled(true);
+            //ge.getTime().setHistoricalImageryEnabled(false);
+            // CONTROL TIME
+            var speedyRate = 60*60*24*365; // 1 year for each real second.
+            ge.getTime().setRate(speedyRate);
+            ge.getTime().setRate(0); // pause
+            // Set time span for control
+            var timeSpan = ge.getTime().getTimePrimitive();
+            console.log('timespan start ', timeSpan.getBegin().get());
+            console.log('timespan stop ', timeSpan.getEnd().get());
+            timeSpan.getEnd().set('2025-01-01');
+            console.log('timespan newstop ', timeSpan.getEnd().get());
+            ge.getTime().setTimePrimitive(timeSpan);
+            // Show time control slider
+            ge.getTime().getControl().setVisibility(ge.VISIBILITY_SHOW);
+
             // Make and draw a circle "polygon"
-            var polygonPlacemark = ge.createPlacemark('');
-            polygonPlacemark.setGeometry(ge.createPolygon(''));
-            var outer = ge.createLinearRing('');
-            polygonPlacemark.getGeometry().setOuterBoundary(makeCircle(.65, 0, 0));
-            ge.getFeatures().appendChild(polygonPlacemark);
+            var pc = polyCircle(0.65, 0, 0, '2001', '2014');
+            ge.getFeatures().appendChild(pc);
+            animCircle(0.5, 0, 0, 2, 3, 2001, 2050);
 
             // Draw and show the earth
             ge.getWindow().setVisibility(true);
@@ -29,17 +44,44 @@
         function failureCB(errorCode) {
         }
 
+        // Draw a traveling circle (TODO: query per date.  This is a hack)
+        function animCircle(radius, lat, lon, vlat, vlon, begin, end) {
+            for (var i = begin; i < end; i++) { // hack, need integer begin/end
+                var j = i + 1; // end one year after start for now
+                console.log('poly circle begin end ', i.toString(),
+                        j.toString());
+                var pc = polyCircle(radius, lat, lon, i.toString(), j.toString());
+                ge.getFeatures().appendChild(pc);
+                lat += vlat;
+                lon += vlon;
+            }
+        }
+
         // Draw a circle on the map
-        function makeCircle(radius, x, y) {
-            var center = ge.getView().copyAsLookAt(ge.ALTITUDE_RELATIVE_TO_GROUND);
+        function polyCircle(radius, lat, lon, begin, end) {
+            var timeSpan = ge.createTimeSpan('');
+            timeSpan.getBegin().set(begin);
+            timeSpan.getEnd().set(end);
+
+            var placemark = ge.createPlacemark('');
+            placemark.setTimePrimitive(timeSpan);
+            placemark.setGeometry(ge.createPolygon(''));
+
+            var circle = makeCircle(radius, lat, lon);
+            placemark.getGeometry().setOuterBoundary(circle);
+
+            return placemark;
+        }
+
+        // Make a circle (ring)
+        function makeCircle(radius, lat, lon) {
             var ring = ge.createLinearRing('');
             var steps = 25;
             var pi2 = Math.PI * 2;
             for (var i = 0; i < steps; i++) {
-                var lat = center.getLatitude() + x + radius * Math.cos(i / steps * pi2);
-                var lng = center.getLongitude() + y + radius *
-                Math.sin(i / steps * pi2);
-                ring.getCoordinates().pushLatLngAlt(lat, lng, 0);
+                var x = lat + radius * Math.cos(i / steps * pi2);
+                var y = lon + radius * Math.sin(i / steps * pi2);
+                ring.getCoordinates().pushLatLngAlt(x, y, 0);
             }
             return ring;
         }
@@ -48,8 +90,7 @@
         google.setOnLoadCallback(init);
     </script>
   </head>
-  <body onload='init()' onunload="GUnload()" id='body'>
-      <h1>Hackteroids!</h1>
-      <div id='map3d'></div>
+  <body>
+    <div id="map3d" style="height: 400px; width: 600px;"></div>
   </body>
 </html>
