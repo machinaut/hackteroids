@@ -1,1 +1,28 @@
-Hello, space.
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <head>
+    <title>HACKTEROIDS!</title>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+
+    <script type="text/javascript" src="geowhiz.js"></script>
+    <script type="text/javascript">
+        var ge;
+        google.load("earth", "1", {"other_params":"sensor=true"});
+        function init() {
+            google.earth.createInstance('map3d', initCB, failureCB);
+        }
+        function initCB(instance) {
+            ge = instance;
+            ge.getWindow().setVisibility(true);
+        }
+        function failureCB(errorCode) {
+        }
+        google.setOnLoadCallback(init);
+    </script>
+  </head>
+  <body onload='init()' onunload="GUnload()" id='body'>
+      <h1>Hackteroids!</h1>
+      <div id='map3d'></div>
+  </body>
+</html>
