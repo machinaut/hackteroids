@@ -4,30 +4,12 @@
   <head>
     <title>HACKTEROIDS!</title>
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" src="Soft03CritList.js"></script>
+    <script type="text/javascript" src="Soft03CritList_earth.js"></script>
     <script type="text/javascript">
         var ge;
         var loopTimer;
         google.load("earth", "1", {"other_params":"sensor=true"});
         console.log("Num Asteroids loaded:",data.length);
-
-        function loopTime() { // sets the current slider position to the current system time
-            var speedyRate = 6*60*24*365; // 1 year for each 10 seconds
-            var time = ge.getTime().getTimePrimitive();
-            if (time.getType() == 'KmlTimeSpan') {
-                console.log("Time Span: ",time.getEnd().get());
-                if(time.getEnd().get() >= '2015') {
-                    time.getEnd().set('2001');
-                    ge.getTime().setRate(speedyRate);
-                }
-            } else {
-                console.log("Time Stamp: ",time.getWhen().get());
-                if(time.getWhen().get() >= '2015') {
-                    time.getWhen().set('2001');
-                    ge.getTime().setRate(speedyRate);
-                }
-            }
-        }
 
         function init() {
             google.earth.createInstance('map3d', initCB, failureCB);
@@ -36,38 +18,42 @@
         function initCB(instance) {
             ge = instance;
 
-            // Hack to really show control slider
-            //ge.getTime().setHistoricalImageryEnabled(true);
-            //ge.getTime().setHistoricalImageryEnabled(false);
-            //ge.getTime().setRate(0); // pause
             // Show time control slider
             ge.getTime().getControl().setVisibility(ge.VISIBILITY_SHOW);
 
-            animThing(0.5, 0, 0, 0.4, 0.3, 2005, 2015);
+            animTeroid(data[0], 'ff00ff99');
+            animTeroid(data[1], 'ffff9900');
+            animTeroid(data[2], 'ff9900ff');
+            animTeroid(data[3], 'ff0099ff');
+            animTeroid(data[4], 'ff99ff00');
+            animTeroid(data[5], 'ffff0099');
 
             // Draw and show the earth
             ge.getWindow().setVisibility(true);
-
-            // Set loop timer HACK NOT DOING THIS FOR RIGHT NOW
-            //var loopTimer = setInterval(loopTime, 5000); //update the slider every 5 seconds
         }
 
         function failureCB(errorCode) {
         }
 
-        // Draw a traveling thing (TODO: query per date.  This is a hack)
-        function animThing(radius, lat, lon, vlat, vlon, begin, end) {
-            for (var i = begin; i < end; i++) { // hack, need integer begin/end
-                var j = i + 1; // end one year after start for now
-                var pc = polyThing(radius, lat, lon, i.toString(), j.toString());
-                ge.getFeatures().appendChild(pc);
-                lat += vlat;
-                lon += vlon;
+        // Draw asteroid data
+        function animTeroid(ast, color) {
+            console.log('Processing asteroid:', ast.name);
+            // For each position in history
+            var start = '2014';
+            for (var i = 0; i < ast.pos.length; i++ ) {
+                var p = ast.pos[i];
+                if( p.date <= start ) {
+                    continue;
+                }
+                var radius = (30 - p.alt) * 0.07;
+                var thing = polyThing(radius, p.lat, p.lon, start, p.date, color);
+                start = p.date; // save to start next thingy
+                ge.getFeatures().appendChild(thing);
             }
         }
 
         // Draw a thing on the map
-        function polyThing(radius, lat, lon, begin, end) {
+        function polyThing(radius, lat, lon, begin, end, color) {
             var timeSpan = ge.createTimeSpan('');
             timeSpan.getBegin().set(begin);
             timeSpan.getEnd().set(end);
@@ -79,15 +65,20 @@
             var thing = makeThing(radius, lat, lon);
             placemark.getGeometry().setOuterBoundary(thing);
 
+            //Create a style and set color of thing
+            placemark.setStyleSelector(ge.createStyle(''));
+            var car = placemark.getStyleSelector().getPolyStyle().getColor();
+            car.set(color);
+
             return placemark;
         }
 
         function makeThing(radius, lat, lon) {
             var ring = ge.createLinearRing('');
-            ring.getCoordinates().pushLatLngAlt(lat + radius, lon, 0);
-            ring.getCoordinates().pushLatLngAlt(lat, lon + radius, 0);
-            ring.getCoordinates().pushLatLngAlt(lat - radius, lon, 0);
-            ring.getCoordinates().pushLatLngAlt(lat, lon - radius, 0);
+            ring.getCoordinates().pushLatLngAlt(lat + radius, lon, 1000);
+            ring.getCoordinates().pushLatLngAlt(lat, lon + radius, 1000);
+            ring.getCoordinates().pushLatLngAlt(lat - radius, lon, 1000);
+            ring.getCoordinates().pushLatLngAlt(lat, lon - radius, 1000);
             return ring;
         }
 
@@ -96,6 +87,7 @@
     </script>
   </head>
   <body>
-    <div id="map3d" style="height: 400px; width: 600px;"></div>
+      <!--<div id="map3d" style="height: 400px; width: 600px;"></div>-->
+    <div id="map3d"></div>
   </body>
 </html>
